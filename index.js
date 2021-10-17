@@ -394,7 +394,7 @@ const btoa = function (str) {
 };
 
 init = async () => {
-  console.log("I have been summoned!");
+  console.log("I have been summoned!!");
   let query = new Moralis.Query("KekwTokenEvents");
   let subscription = await query.subscribe();
   subscription.on("create", onTokenMint);
