@@ -1,0 +1,23 @@
+{
+  "dna": "44e2dd5c4bbc85f404144cf5af4b56295cf9323f",
+  "name": "#4",
+  "description": "ANBU masks collection",
+  "image": "ipfs://QmNfPMWLPTEbFpBtPFy4wkYEHRVWcz8dzjziTcPbebzF53/4.png",
+  "edition": 4,
+  "date": 1634567453601,
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "layer"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "eyes"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "mouth"
+    }
+  ],
+  "compiler": "HashLips Art Engine"
+}
