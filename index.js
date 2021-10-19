@@ -1,112 +1,45 @@
-// const express = require("express");
-// const Moralis = require("moralis/node");
-// const ipfs = require("ipfs-http-client");
-// const Web3 = require("web3");
-// var fs = require("fs");
-// const ABI = require("./ABI.json");
+const express = require("express");
+const Moralis = require("moralis/node");
+const Web3 = require("web3");
 
-// const app = express();
-// const PORT = process.env.PORT || 1330;
-// const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
-// const privateKey = process.env.PRIV_KEY;
-// const ipfsClient = ipfs.create("https://ipfs.infura.io:5001");
+const { startCreating } = require("./src/main.js");
 
-// let image;
-// let web3 = new Web3(
-//   "https://rinkeby.infura.io/v3/8e4de63cfa6842e2811b357d94423d01"
-// );
-// let contract = new web3.eth.Contract(JSON.parse(ABI.result), CONTRACT_ADDRESS);
-// let account = web3.eth.accounts.privateKeyToAccount("0x" + privateKey);
+const app = express();
+const PORT = process.env.PORT || 1330;
 
-// Moralis.initialize(process.env.APP_ID, "", process.env.MASTER_KEY);
-// Moralis.serverURL = process.env.SERVER_URL;
+Moralis.initialize(process.env.APP_ID, "", process.env.MASTER_KEY);
+Moralis.serverURL = process.env.SERVER_URL;
 
-// app.listen(PORT, function () {
-//   web3.eth.accounts.wallet.add(account);
-//   web3.eth.defaultAccount = account.address;
-//   contract.defaultChain = "rinkeby";
-//   contract.defaultHardfork = "london";
-//   init();
-// });
+app.listen(PORT, function () {
+  init();
+});
 
-// const getImage = () =>
-//   fs.readFile("bart.png", function (err, data) {
-//     if (data) {
-//       image = data;
-//       console.log(image);
-//     }
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
+async function init() {
+  console.log("I have been summoned!!");
+  let stopped = false;
+  while (!stopped) {
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+    resolveMetadata();
+  }
+}
 
-// const btoa = function (str) {
-//   return Buffer.from(str).toString("base64");
-// };
-
-// init = async () => {
-//   console.log("I have been summoned!!");
-//   let query = new Moralis.Query("KekwTokenEvents");
-//   let subscription = await query.subscribe();
-//   subscription.on("create", onTokenMint);
-//   getImage();
-// };
-
-// onTokenMint = async (token) => {
-//   try {
-//     console.log("Minting... Token ID:" + token.attributes.tokenID);
-//     lol(token.attributes.tokenID);
-//   } catch (err) {
-//     console.log("Error Occured: ");
-//     console.log(err);
-//   }
-// };
-
-// async function lol(tokenID) {
-//   console.log("Metadata Minter has been summoned: ");
-//   console.log("A token with ID: [" + tokenID + "] has been Minted.");
-//   const gasLimit = await contract.methods
-//     ._setTokenURI(
-//       tokenID,
-//       "https://ipfs.io/ipfs/Qmc31eQ8M68cEEukWYzynL2e56yEh5iJ3uXyYrwCVsSjxSasdasdad"
-//     )
-//     .estimateGas({
-//       from: web3.eth.defaultAccount,
-//     });
-
-//   console.log("Gas For Function: " + gasLimit);
-//   const latestBlock = await web3.eth.getBlock("latest");
-//   const blockGas = latestBlock.gasLimit / 100000000000;
-//   console.log("Gas For Gwei: " + blockGas + " ETH");
-
-//   const addedImage = await ipfsClient.add(image);
-//   console.log("Image Data: ");
-//   console.log(addedImage);
-//   const metadata = {
-//     name: "Kekw",
-//     description: "A collection of KEKWs",
-//     image: "https://ipfs.io/ipfs/" + addedImage.path,
-//     attributes: [{ type: "ID", value: tokenID }],
-//   };
-//   const addedMetadata = await ipfsClient.add(JSON.stringify(metadata));
-//   console.log("Final Path: ");
-//   console.log("https://ipfs.io/ipfs/" + addedMetadata.path);
-
-//   const finalIpfs = addedMetadata.path;
-//   contract.methods
-//     ._setTokenURI(tokenID, finalIpfs)
-//     .send({
-//       from: web3.eth.defaultAccount,
-//       gasLimit: gasLimit,
-//     })
-//     .on("transactionHash", function (hash) {
-//       console.log(hash);
-//     });
-// }
-
-const { startCreating, buildSetup } = require("./src/main.js");
-
-(() => {
-  buildSetup();
-  startCreating();
-})();
+async function resolveMetadata() {
+  let query = new Moralis.Query("KekwTokenEvents");
+  query.equalTo("metadata", "False");
+  console.log("Checking new mints...");
+  const kekwTokenevents = await query.find();
+  for (let event of kekwTokenevents) {
+    console.log(
+      "Token ID does [ " + event.attributes.tokenID + " ] not have Metadata"
+    );
+    try {
+      console.log("Generating metadata and storing on IPFS...");
+      startCreating(event.attributes.tokenID);
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+      event.set("metadata", "True");
+      event.save();
+    } catch (e) {
+      console.log(e);
+    }
+  }
+}

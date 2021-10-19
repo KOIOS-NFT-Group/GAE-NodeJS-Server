@@ -18,9 +18,24 @@ const {
 const console = require("console");
 const canvas = createCanvas(format.width, format.height);
 const ctx = canvas.getContext("2d");
-var metadataList = [];
+const ipfs = require("ipfs-http-client");
+const ipfsClient = ipfs.create("https://ipfs.infura.io:5001");
+
+//Contract stuff
+const ABI = require("../ABI.json");
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
+const privateKey = process.env.PRIV_KEY;
+const Web3 = require("web3");
+let web3 = new Web3(
+  "https://rinkeby.infura.io/v3/8e4de63cfa6842e2811b357d94423d01"
+);
+
+let contract = new web3.eth.Contract(JSON.parse(ABI.result), CONTRACT_ADDRESS);
+let account = web3.eth.accounts.privateKeyToAccount("0x" + privateKey);
+
 var attributesList = [];
 var dnaList = [];
+var metadata;
 
 const buildSetup = () => {
   if (fs.existsSync(buildDir)) {
@@ -98,21 +113,72 @@ const drawBackground = () => {
   ctx.fillRect(0, 0, format.width, format.height);
 };
 
-const addMetadata = (_dna, _edition) => {
+const addMetadata = async (_dna, _tokenID) => {
   let dateTime = Date.now();
+  const addedImage = await ipfsClient.add(
+    fs.readFileSync(`${buildDir}/images/${_tokenID}.png`)
+  );
+
   let tempMetadata = {
     dna: sha1(_dna.join("")),
-    name: `#${_edition}`,
+    name: `#${_tokenID}`,
     description: description,
-    image: `${baseUri}/${_edition}.png`,
-    edition: _edition,
+    image: baseUri + addedImage.path,
+    edition: _tokenID,
     date: dateTime,
     attributes: attributesList,
-    compiler: "HashLips Art Engine",
   };
-  metadataList.push(tempMetadata);
+  metadata = tempMetadata;
+  saveMetaDataSingleFile(_tokenID);
+  uploadAndSet(_tokenID);
   attributesList = [];
 };
+
+const saveMetaDataSingleFile = (_tokenID) => {
+  fs.writeFileSync(
+    `${buildDir}/json/${_tokenID}.json`,
+    JSON.stringify(metadata, null, 2)
+  );
+};
+
+async function uploadAndSet(_tokenID) {
+  web3.eth.accounts.wallet.add(account);
+  web3.eth.defaultAccount = account.address;
+  contract.defaultChain = "rinkeby";
+  contract.defaultHardfork = "london";
+  const gasLimit = await contract.methods
+    ._setTokenURI(
+      _tokenID,
+      "https://ipfs.io/ipfs/Qmc31eQ8M68cEEukWYzynL2e56yEh5iJ3uXyYrwCVsSjxSasdasdad"
+    )
+    .estimateGas({
+      from: web3.eth.defaultAccount,
+    });
+
+  console.log("Gas For Function: " + gasLimit);
+  const latestBlock = await web3.eth.getBlock("latest");
+  const blockGas = latestBlock.gasLimit / 100000000000;
+  console.log("Gas For Gwei: " + blockGas + " ETH");
+
+  console.log(JSON.stringify(metadata, null, 2));
+  const addedMetadata = await ipfsClient.add(JSON.stringify(metadata, null, 2));
+  console.log("Final Path: ");
+  console.log("https://ipfs.io/ipfs/" + addedMetadata.path);
+
+  const finalIpfs = addedMetadata.path;
+  const nonce = await web3.eth.getTransactionCount(web3.eth.defaultAccount);
+  console.log("Nonce for account: " + nonce);
+  contract.methods
+    ._setTokenURI(_tokenID, finalIpfs)
+    .send({
+      from: web3.eth.defaultAccount,
+      gasLimit: gasLimit,
+      nonce: nonce,
+    })
+    .on("transactionHash", function (hash) {
+      console.log(hash);
+    });
+}
 
 const addAttributes = (_element) => {
   let selectedElement = _element.layer.selectedElement;
@@ -178,25 +244,11 @@ const createDna = (_layers) => {
   return randNum;
 };
 
-const writeMetaData = (_data) => {
-  fs.writeFileSync(`${buildDir}/json/_metadata.json`, _data);
-};
-
-const saveMetaDataSingleFile = (_editionCount) => {
-  fs.writeFileSync(
-    `${buildDir}/json/${_editionCount}.json`,
-    JSON.stringify(
-      metadataList.find((meta) => meta.edition == _editionCount),
-      null,
-      2
-    )
-  );
-};
-
-const startCreating = async () => {
+const startCreating = async (tokenID) => {
   let layerConfigIndex = 0;
   let editionCount = 1;
   let failedCount = 0;
+
   while (layerConfigIndex < layerConfigurations.length) {
     const layers = layersSetup(
       layerConfigurations[layerConfigIndex].layersOrder
@@ -221,13 +273,10 @@ const startCreating = async () => {
           renderObjectArray.forEach((renderObject) => {
             drawElement(renderObject);
           });
-          saveImage(editionCount);
-          addMetadata(newDna, editionCount);
-          saveMetaDataSingleFile(editionCount);
+          saveImage(tokenID);
+          addMetadata(newDna, tokenID);
           console.log(
-            `Created edition: ${editionCount}, with DNA: ${sha1(
-              newDna.join("")
-            )}`
+            `Created edition: ${tokenID}, with DNA: ${sha1(newDna.join(""))}`
           );
         });
         dnaList.push(newDna);
@@ -245,7 +294,6 @@ const startCreating = async () => {
     }
     layerConfigIndex++;
   }
-  writeMetaData(JSON.stringify(metadataList, null, 2));
 };
 
 module.exports = { startCreating, buildSetup, getElements };

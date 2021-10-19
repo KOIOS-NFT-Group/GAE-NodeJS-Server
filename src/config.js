@@ -1,23 +1,17 @@
 const { MODE } = require("./blendMode.js");
-const description =
-  "ANBU masks collection";
-const baseUri = "ipfs://QmNfPMWLPTEbFpBtPFy4wkYEHRVWcz8dzjziTcPbebzF53";
+const description = "ANBU masks collection";
+const baseUri = "ipfs://";
 
 const layerConfigurations = [
   {
-    growEditionSizeTo: 10,
-    layersOrder: [
-      { name: "background" },
-      { name: "eyes" },
-      { name: "mouth" },
-
-    ],
+    growEditionSizeTo: 1,
+    layersOrder: [{ name: "background" }, { name: "eyes" }, { name: "mouth" }],
   },
 ];
 
 const format = {
-  width: 512,
-  height: 512,
+  width: 2000,
+  height: 2000,
 };
 
 const background = {
