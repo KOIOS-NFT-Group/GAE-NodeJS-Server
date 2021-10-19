@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "pkg": {
+    "assets": [
+      "layers/**/*"
+    ],
+    "scripts": [
+      "src/main.js",
+      "src/config.js"
+    ],
+    "outputPath": "dist"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,6 +24,8 @@
     "express": "^4.17.1",
     "ipfs-http-client": "^53.0.1",
     "moralis": "0.0.90",
-    "web3": "^1.6.0"
+    "web3": "^1.6.0",
+    "canvas": "^2.8.0",
+    "sha1": "^1.1.1"
   }
 }
