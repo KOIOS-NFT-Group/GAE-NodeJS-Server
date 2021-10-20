@@ -5,7 +5,13 @@ const baseUri = "ipfs://";
 const layerConfigurations = [
   {
     growEditionSizeTo: 1,
-    layersOrder: [{ name: "background" }, { name: "eyes" }, { name: "mouth" }],
+    layersOrder: [
+      { name: "background" },
+      { name: "skins" },
+      { name: "eyes" },
+      { name: "hair" },
+      { name: "mouth" },
+    ],
   },
 ];
 
