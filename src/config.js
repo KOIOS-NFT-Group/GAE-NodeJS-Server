@@ -1,5 +1,6 @@
 const { MODE } = require("./blendMode.js");
-const description = "ANBU masks collection";
+const description =
+  "The genesis KOIOS Titan NFT collection. Build with ❤ by group 28.";
 const baseUri = "ipfs://";
 
 const layerConfigurations = [

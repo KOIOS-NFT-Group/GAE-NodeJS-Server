@@ -121,7 +121,7 @@ const addMetadata = async (_dna, _tokenID) => {
 
   let tempMetadata = {
     dna: sha1(_dna.join("")),
-    name: `#${_tokenID}`,
+    name: "KOIOS Titan " + `#${_tokenID}`,
     description: description,
     image: baseUri + addedImage.path,
     edition: _tokenID,
