@@ -18,8 +18,24 @@ const {
 const console = require("console");
 const canvas = createCanvas(format.width, format.height);
 const ctx = canvas.getContext("2d");
-const ipfs = require("ipfs-http-client");
-const ipfsClient = ipfs.create("https://ipfs.infura.io:5001");
+
+//IPFS Pinning setup for Infura
+const ipfsClient = require("ipfs-http-client");
+
+const auth =
+  "Basic " +
+  Buffer.from(
+    process.env.IPFS_PROJECT_ID + ":" + process.env.IPFS_PROJECT_SECRET
+  ).toString("base64");
+
+const client = ipfsClient.create({
+  host: "ipfs.infura.io",
+  port: 5001,
+  protocol: "https",
+  headers: {
+    authorization: auth,
+  },
+});
 
 //Contract stuff
 const ABI = require("../ABI.json");
@@ -115,8 +131,9 @@ const drawBackground = () => {
 
 const addMetadata = async (_dna, _tokenID) => {
   let dateTime = Date.now();
-  const addedImage = await ipfsClient.add(
-    fs.readFileSync(`${buildDir}/images/${_tokenID}.png`)
+  const addedImage = await client.add(
+    fs.readFileSync(`${buildDir}/images/${_tokenID}.png`),
+    { pin: true }
   );
 
   let tempMetadata = {
@@ -161,7 +178,9 @@ async function uploadAndSet(_tokenID) {
   console.log("Gas For Gwei: " + blockGas + " ETH");
 
   console.log(JSON.stringify(metadata, null, 2));
-  const addedMetadata = await ipfsClient.add(JSON.stringify(metadata, null, 2));
+  const addedMetadata = await client.add(JSON.stringify(metadata, null, 2), {
+    pin: true,
+  });
   console.log("Final Path: ");
   console.log("https://ipfs.io/ipfs/" + addedMetadata.path);
 
